@@ -1,0 +1,3 @@
+*.tox binary
+*.toe binary
+*.md text eol=lf
