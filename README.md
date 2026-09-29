@@ -66,6 +66,11 @@ capture refreshes (every frame, every N frames, or on demand).
    render through this component instead.
 3. Shape it on the **Look** page.
 
+The environment-only material is what the glass wears everywhere except its own
+pass: in mirror captures, in other cameras' renders and in a light's shadow map.
+It never touches the host render, so the glass can sit in a scene with mirrors and
+shadow-casting lights.
+
 Use one GlassPass per camera view. Each pass owns its own material and samples its
 own background, which is what makes several cameras correct at once.
 
@@ -81,7 +86,18 @@ reflects something plausible straight away.
 - A flat (planar) mirror is correct for one camera only, and is deliberately left
   out of other mirrors' captures. A mirror that must appear inside another mirror
   needs Curved mode.
-- Curved mirrors reflect each other one capture behind (See Mirrors, on by default).
+- A Curved reflection is one frame behind its capture. That is what lets mirrors
+  reflect each other (See Mirrors, on by default), lets glass and mirrors capture
+  each other, and lets a shadow-casting light shine on all of them without a cook
+  loop. It costs a second copy of the cube map: about 8 MB at 512 per face, 34 MB
+  at 1024.
+- A Flat mirror reads its capture directly, so a light that casts shadows must not
+  have the mirror among its **Shadow Casters** (`* ~ mirror1`). Otherwise
+  TouchDesigner reports a cook dependency loop on the light. The probe's **Status**
+  names the light and the target when this happens.
+- An **Environment Map** you supply to GlassPass is read directly too. If that map
+  is itself a render that draws the glass, or is lit by a light whose shadow map
+  draws the glass, it loops; use a **Probe** for anything captured live.
 - Box parallax is exact when the surroundings really are a box. For a dome, an
   L-shaped room or an open scene, use Infinite and a well-placed capture point.
 - Both components write opaque alpha.
