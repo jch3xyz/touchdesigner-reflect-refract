@@ -1,5 +1,53 @@
 # Release notes
 
+## MirrorProbe 1.1.0 — 2026-10-06
+
+A feature release for MirrorProbe. GlassPass stays at 1.0.1 and needs no change.
+
+### Added
+
+- **Quality > Capture Format** sets the pixel format of both captures, the Flat
+  reflection and the Curved cube map (and the one-frame-late copy the material
+  reads). Two settings:
+  - **16-bit Float (HDR)**, the default. Reflections keep values above 1, so a
+    reflected light, flame or sun stays hot for bloom, glare and tone mapping
+    downstream. It matches a scene-linear `rgba16float` main render.
+  - **8-bit Fixed**, the 1.0 behaviour and the cheaper option. Reflections clip
+    at 1.
+- **Status shows the format**: "OK: Curved, 512 per face, 1x AA, 16-bit float,
+  every frame".
+
+### Changed
+
+- **Captures default to 16-bit float.** In 1.0 and 1.0.1 they were 8-bit, so a
+  reflected emitter was capped at 1: an emitter at 6.0 came back as 1.0 from both
+  captures, and a GlassPass reading a probe could reflect at most 1.0. At 16-bit
+  the same emitter reflects at 5.45 in both modes (6.0 times the mirror's
+  reflectance), and glass reflecting a 200 emitter through a probe reads 8.5.
+- **Memory:**
+
+  | Capture | 8-bit Fixed | 16-bit Float |
+  |---|---|---|
+  | Curved, 512 per face, 1x AA | 26 MB | 46 MB |
+  | Curved, 1024 per face, 1x AA | 104 MB | 184 MB |
+  | Flat, 1920x1080, 2x AA | 44 MB | 70 MB |
+
+  Frame rate was unchanged in testing (60 fps).
+- **The look can change in an 8-bit main render.** Anything brighter than 1 that
+  a mirror reflects, such as a lit white floor, used to be clipped at the capture
+  and then dimmed by the mirror's reflectance, so it read slightly grey. It now
+  reflects at its true value, and the main render clips it like the original.
+  In the quick-start example this brightens the reflected floor in both mirrors
+  (5% of the frame, by 0.07 on average). For the 1.0 look, set Capture Format
+  to 8-bit Fixed.
+- The About page reads **1.1.0**.
+
+### Upgrading
+
+As for 1.0.1: replace the component with the new `.tox` (or replace your master
+if you keep clones) and press **Assign**. Clones of an upgraded master pick up
+Capture Format as 16-bit Float.
+
 ## 1.0.1 — 2026-09-29
 
 A bug-fix release. Replace both components; the quick-start examples carry the

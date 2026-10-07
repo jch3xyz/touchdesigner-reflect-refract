@@ -53,8 +53,13 @@ component, so you can open one without the component `.tox` beside it.
 If the mirror sits in a room, set **Parallax** to Box and press **Fit Box** — the
 reflection then lines up with the walls instead of sliding as the camera moves.
 
-Quality lives on its own page: cube face size, anti-aliasing, and how often the
-capture refreshes (every frame, every N frames, or on demand).
+Quality lives on its own page: cube face size, anti-aliasing, capture format, and
+how often the capture refreshes (every frame, every N frames, or on demand).
+
+**Capture Format** defaults to 16-bit Float, so reflections stay HDR: a reflected
+light or flame keeps its values above 1 for bloom and other post effects, matching
+a scene-linear `rgba16float` main render. 8-bit Fixed clips reflections at 1 and
+uses a little over half the memory.
 
 ## GlassPass in three steps
 
@@ -89,8 +94,8 @@ reflects something plausible straight away.
 - A Curved reflection is one frame behind its capture. That is what lets mirrors
   reflect each other (See Mirrors, on by default), lets glass and mirrors capture
   each other, and lets a shadow-casting light shine on all of them without a cook
-  loop. It costs a second copy of the cube map: about 8 MB at 512 per face, 34 MB
-  at 1024.
+  loop. It costs a second copy of the cube map: about 16 MB at 512 per face and
+  64 MB at 1024 at 16-bit Float, half that at 8-bit Fixed.
 - A Flat mirror reads its capture directly, so a light that casts shadows must not
   have the mirror among its **Shadow Casters** (`* ~ mirror1`). Otherwise
   TouchDesigner reports a cook dependency loop on the light. The probe's **Status**
@@ -107,7 +112,8 @@ reflects something plausible straight away.
 Defaults are sized for an Apple Silicon Mac with a large unified-memory budget.
 They were not tested on Windows or on a discrete GPU. If frame rate suffers, the
 **Quality** page is where to scale down: lower the cube face size, drop
-anti-aliasing to 1x, switch **Update** from Every Frame to Every N Frames or On
+anti-aliasing to 1x, set Capture Format to 8-bit Fixed if nothing downstream needs
+HDR reflections, switch **Update** from Every Frame to Every N Frames or On
 Demand, and turn off cube faces that never show (the −Y face under an object
 standing on a floor, for instance — each face you turn off saves a sixth of the
 capture's cost).
