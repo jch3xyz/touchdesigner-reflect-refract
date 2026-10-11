@@ -1,5 +1,46 @@
 # Release notes
 
+## GlassPass 1.0.2 — 2026-10-11
+
+A bug-fix release for GlassPass, for the TouchDesigner bug described under
+MirrorProbe 1.1.1 below. MirrorProbe stays at 1.1.1. Replace `GlassPass.tox` (and
+the quick-start, which carries its own copy).
+
+**The defect.** A GlassPass that is not set up yet (no Host Render, Objects or
+camera) leaked memory on every frame its tile was on screen in a network pane:
+about 290 bytes a frame, never freed. A configured GlassPass did not leak.
+
+**The cause** is the same TouchDesigner bug (2025.33230, macOS): once GPU cook
+timing is on, every cook of a Render TOP or Render Pass TOP whose **Render**
+toggle is off leaks. An idle GlassPass kept both its glass pass and its 8×8
+stand-in render at Render off, and its tile cooked both every frame.
+
+### Fixed
+
+- **No render in GlassPass is ever off.** The glass pass and its 8×8 stand-in
+  keep Render on. Until Host Render, Objects and a camera are all set, the pass
+  draws nothing over the stand-in, which costs next to nothing.
+- **GlassPass's internal cost helper no longer reads GPU cook time**, which would
+  switch GPU timing on for the whole project. No parameter calls it, so 1.0.1
+  never did; it is fixed so nothing can start to.
+
+Measured with GPU timing on: an idle 1.0.1 on screen leaked 2 × 128 + 32 bytes
+per frame; 1.0.2 leaks nothing measurable, idle or configured.
+
+### Changed
+
+- **A GlassPass with a Host Render but no Objects or camera now rests at 8×8**,
+  as an idle one does, and does not take the Host Render until it is set up. A
+  Render TOP can feed only one Render Pass TOP, so it stays free until then.
+- A configured GlassPass looks exactly as before: pixel-identical to 1.0.1 in
+  both example scenes.
+- The About page reads **1.0.2**.
+
+### Upgrading
+
+Replace the component with the new `.tox` (or replace your master if you keep
+clones). Clones pick the fix up from their master.
+
 ## MirrorProbe 1.1.1 — 2026-10-11
 
 A bug-fix release for MirrorProbe. GlassPass stays at 1.0.1. Replace
