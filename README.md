@@ -96,8 +96,8 @@ reflects something plausible straight away.
   each other, and lets a shadow-casting light shine on all of them without a cook
   loop. It costs a second copy of the cube map: about 16 MB at 512 per face and
   64 MB at 1024 at 16-bit Float, half that at 8-bit Fixed.
-- A Flat mirror reads its capture directly, so a light that casts shadows must not
-  have the mirror among its **Shadow Casters** (`* ~ mirror1`). Otherwise
+- A Flat mirror on Every Frame reads its capture directly, so a light that casts
+  shadows must not have the mirror among its **Shadow Casters** (`* ~ mirror1`). Otherwise
   TouchDesigner reports a cook dependency loop on the light. The probe's **Status**
   names the light and the target when this happens.
 - An **Environment Map** you supply to GlassPass is read directly too. If that map

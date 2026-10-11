@@ -1,5 +1,66 @@
 # Release notes
 
+## MirrorProbe 1.1.1 — 2026-10-11
+
+A bug-fix release for MirrorProbe. GlassPass stays at 1.0.1. Replace
+`MirrorProbe.tox` (and the quick-start, which carries its own copy).
+
+**The defect.** A scene with MirrorProbe 1.1.0 slowed down over hours. In one
+project it fell from 60+ fps to 10–12 fps after 7.5 hours, and only a restart
+cleared it.
+
+**The cause** is a TouchDesigner bug (2025.33230, macOS). A Render TOP whose
+**Render** toggle is off still cooks whenever something reads it. Once GPU cook
+timing is on, each such cook leaks about 1.5 KB that is never freed, and the
+leaked blocks make every GPU operator slower. MirrorProbe 1.1.0 triggered it every
+frame, in every mode:
+
+- the material always sampled both captures, and the one not in use sat with
+  Render off: the cube capture in Flat mode, the flat capture in Curved mode;
+- On Demand kept the capture in use at Render off between captures;
+- the probe's own **Cost** readout read the capture's GPU time, which is what
+  switches GPU timing on.
+
+### Fixed
+
+- **Neither capture is ever read with Render off.** Both keep Render on. A capture
+  not in use is not read at all: the material reads a small constant instead.
+- **Every N Frames and On Demand hold the last capture without re-cooking it.**
+  Each capture now has a hold: a Feedback TOP whose target is a Switch TOP. On a
+  refresh frame the Switch passes the render; on every other frame it passes the
+  hold back to itself, and the render does not cook at all. Curved mode already
+  read its capture one frame late, so its look and timing are unchanged.
+- **Cost no longer reads GPU time.** It shows GPU memory and CPU cook time.
+- **An unused capture still gives back its memory** when the Mode changes: it
+  renders once at 8×8.
+- **Looking at an idle probe in a network no longer cooks its capture.** The
+  probe's tile now shows the TOP its material reads.
+
+Measured on the quick-start, with GPU timing on: 1.1.0 leaked one 1.25 KB +
+128 + 32 + 2 × 48 byte set per frame on Every Frame and Every N Frames, and two
+sets on On Demand. 1.1.1 leaks nothing measurable in any mode, Flat or Curved.
+
+### Changed
+
+- **Flat mode on Every N Frames or On Demand now shows its capture one frame
+  late**, through the hold. On Every Frame it still reads the capture directly, so
+  a moving camera never sees the reflection slide.
+- **The Flat shadow-caster loop only applies on Every Frame**; the slower updates
+  read the hold, which breaks the loop.
+- **Every N Frames renders only on its frames.** 1.1.0 cooked the capture every
+  frame and rendered it on its frames.
+- Every Frame looks exactly as before: pixel-identical to 1.1.0 in both example
+  scenes.
+- The About page reads **1.1.1**.
+
+### Upgrading
+
+Replace the component with the new `.tox` (or replace your master if you keep
+clones) and press **Assign**. Clones of an upgraded master pick up everything
+except their own **Operator Viewer** (Common page), which still shows the raw
+capture and so renders it every frame while the clone's tile is on screen. Copy
+the master's Operator Viewer expression to each clone to stop that.
+
 ## MirrorProbe 1.1.0 — 2026-10-06
 
 A feature release for MirrorProbe. GlassPass stays at 1.0.1 and needs no change.
