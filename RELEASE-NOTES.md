@@ -1,5 +1,36 @@
 # Release notes
 
+## MirrorProbe 1.1.2 — 2026-10-20
+
+A bug-fix release for MirrorProbe. GlassPass stays at 1.0.2. Replace
+`MirrorProbe.tox` (and the quick-start, which carries its own copy).
+
+**The defect.** In a long-running project, a MirrorProbe made other parts of the
+scene slower the longer TouchDesigner stayed open, even while the probe sat idle.
+In one project, every change to a rigged character in the probe's Environment
+went from 25 ms to about 1.9 s after 14 hours. Only a restart cleared it.
+
+**The cause** is the **Cost** readout on the Quality page, combined with a
+TouchDesigner behaviour (2025.33230, macOS). Reading an operator's CPU cook time
+from Python while TouchDesigner is evaluating an expression or a cook adds a
+listener to that operator. The listener is dropped only when that operator cooks,
+and the list never gets shorter. Cost read its capture's cook time from a
+parameter expression every frame. An idle probe never renders its capture, so the
+list grew for as long as TouchDesigner ran, and everything that touched the scene
+the capture draws paid for its length.
+
+### Fixed
+
+- **Cost is read once a second, outside any evaluation.** The readout shows the
+  same text as before and updates within a second. The parameter re-evaluates
+  only when the text changes, so it costs nothing per frame.
+
+### Upgrading
+
+Replace the component with the new `.tox` (or replace your master if you keep
+clones). The About page reads **1.1.2**. A probe that still carries 1.1.1's Cost
+expression after its code is updated no longer leaks either.
+
 ## GlassPass 1.0.2 — 2026-10-11
 
 A bug-fix release for GlassPass, for the TouchDesigner bug described under

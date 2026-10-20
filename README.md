@@ -61,6 +61,14 @@ light or flame keeps its values above 1 for bloom and other post effects, matchi
 a scene-linear `rgba16float` main render. 8-bit Fixed clips reflections at 1 and
 uses a little over half the memory.
 
+**Glass in a mirror is opaque.** In a mirror's capture a GlassPass object wears
+its environment-only material, which shows the environment map through the glass,
+not what is inside it. A flame inside a glass tube is therefore missing from the
+reflection (seen in Flat mode; Curved captures use the same material). If the
+contents matter more than the glass, leave the glass out of the probe's
+**Environment** (`* ~geo_glass`): the reflection then shows the flame, without
+the glass.
+
 ## GlassPass in three steps
 
 1. Drop it in, set **Host Render** to the Render TOP that draws your scene, and
