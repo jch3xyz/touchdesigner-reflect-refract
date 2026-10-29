@@ -61,6 +61,13 @@ light or flame keeps its values above 1 for bloom and other post effects, matchi
 a scene-linear `rgba16float` main render. 8-bit Fixed clips reflections at 1 and
 uses a little over half the memory.
 
+**Background Alpha** (Environment page, default 1) is for anything that reads the
+probe's capture rather than the mirror itself. At 0 the capture is transparent
+wherever nothing was drawn, so a consumer can lay the captured objects over a sky
+of its own (TD Water's `probe` reflection does this). The mirror looks the same
+either way. Keep it at 1 on a probe that feeds a GlassPass, which reads colour
+only and would reflect black where the probe captured nothing.
+
 **Glass in a mirror is opaque.** In a mirror's capture a GlassPass object wears
 its environment-only material, which shows the environment map through the glass,
 not what is inside it. A flame inside a glass tube is therefore missing from the

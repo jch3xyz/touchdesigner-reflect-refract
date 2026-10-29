@@ -1,5 +1,65 @@
 # Release notes
 
+## MirrorProbe 1.2.0 — 2026-10-28
+
+A feature release for MirrorProbe. GlassPass stays at 1.0.2. Replace
+`MirrorProbe.tox` (and the quick-start, which carries its own copy).
+
+### Added
+
+- **Environment > Background Alpha**, 0 to 1, default 1: the alpha of both
+  captures where the reflection shows no geometry. Captured objects are always 1.
+  At 0 the empty directions are transparent, so a consumer that reads the capture
+  can draw it over a sky of its own. Water's `probe` reflection is the first: it
+  layers the probe's objects over its own sky map and wants Background Alpha 0 on
+  the probe it reads. The mirror itself looks the same at any value.
+
+### Changed
+
+- **The mirror material draws its capture over the Background colour.** A
+  TouchDesigner Render TOP writes its clear colour premultiplied, so a capture with
+  Background Alpha 0 holds black where nothing was drawn, not the Background
+  colour. The shader now adds `(1 - alpha) × Background` to what it reads, so the
+  mirror's own reflection shows the Background colour whatever the alpha. At
+  alpha 1 the added term is exactly zero: the quick-start renders pixel-identical
+  to 1.1.2 (maximum difference 0.0 over the 1920×1080 output, the cube hold and the
+  planar capture).
+- **Clones of an upgraded master take the defaults of new parameters.** Until now
+  a clone gained a master's new parameter at the style's zero, not at the schema's
+  default: See Mirrors arrived off on every clone when it was added, and
+  Background Alpha would have arrived at 0, which is transparent. The component
+  now applies the default of any parameter newer than its recorded Version when
+  its code initialises, then records the new Version. No manual step on clones.
+- The About page reads **1.2.0**.
+
+### A GlassPass reading a probe
+
+GlassPass reads the probe's colour only, so a probe at Background Alpha 0 gives
+the glass black where the probe captured nothing (the premultiplied clear). Keep
+Background Alpha at 1 on a probe that feeds a GlassPass, or give the glass a probe
+of its own. At the default nothing changes.
+
+### Verified
+
+macOS (Apple Silicon), TouchDesigner 2025.33230, on the quick-start with its
+animation frozen (bit-exact frame to frame, maximum difference 0.0). At the
+default, the output, the cube hold and the planar capture match 1.1.2 exactly, and
+alpha reads 1.0 on every texel. With Background Alpha 0, and the room excluded
+from the Environment so that empty directions exist: 1,022,844 of the cube's
+1,572,864 texels read alpha 0 (every background texel) and 550,020 read 1 (every
+object texel), nothing in between; the planar capture reads 1,710,951 at 0 and
+360,687 at 1 of 2,073,600, with anti-aliased edges in between. The mirror ball and
+panel match the alpha-1 picture to within one 8-bit step on 0.48% of the output's
+pixels, because the capture stores the Background colour as a 16-bit float while
+the shader's uniform is exact. The sketch's five glass passes still report
+"reflecting probe glass_probe" with that capture at alpha 1 everywhere. The
+exported toxes were loaded back and audited: zero errors, zero warnings.
+
+### Upgrading
+
+Replace the component with the new `.tox` (or replace your master if you keep
+clones). Clones pick up Background Alpha at 1 by themselves.
+
 ## MirrorProbe 1.1.2 — 2026-10-20
 
 A bug-fix release for MirrorProbe. GlassPass stays at 1.0.2. Replace
