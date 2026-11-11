@@ -106,6 +106,10 @@ reflects something plausible straight away.
 - A flat (planar) mirror is correct for one camera only, and is deliberately left
   out of other mirrors' captures. A mirror that must appear inside another mirror
   needs Curved mode.
+- A Flat mirror whose Geometry COMP sits inside another one that the Environment
+  includes (a pane on a door inside a wardrobe) reads its reflection one frame
+  late on Every Frame, and **Status** says so. That is exact for a still camera;
+  for a moving one, keep the mirror's Geometry COMP at the top level.
 - A Curved reflection is one frame behind its capture. That is what lets mirrors
   reflect each other (See Mirrors, on by default), lets glass and mirrors capture
   each other, and lets a shadow-casting light shine on all of them without a cook

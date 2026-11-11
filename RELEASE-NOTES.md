@@ -1,5 +1,73 @@
 # Release notes
 
+## MirrorProbe 1.2.1 — 2026-11-09
+
+A bug-fix release for MirrorProbe. GlassPass stays at 1.0.2. Replace
+`MirrorProbe.tox` (and the quick-start, which carries its own copy).
+
+**The defect.** A Flat mirror whose target sits inside another Geometry COMP (a
+mirror pane on a door, inside a wardrobe, inside a room) could show the wrong
+thing: a wall where a figure's reflection belonged. It looked right at some angles
+(the mirror turned 8°) and wrong at others (38°). A Curved target that is a closed
+body inside another COMP had the same defect: its cube map captured the body from
+the inside.
+
+**The cause.** The probe leaves its Targets out of its own capture with a `~` in
+the capture's Geometry pattern. But an Environment of `*` lists the target's
+outermost parent, a Render TOP draws every listed COMP's children with it, and `~`
+removes only what the pattern itself matched. So a nested target drew itself into
+its own capture. A flat pane lies exactly on the plane the reflection is clipped
+at, so whenever rounding let it through it covered everything seen in the mirror.
+A target at the top level of the network was never affected.
+
+### Fixed
+
+- **A mirror never draws into its own capture.** The mirror material drops its
+  geometry for the probe's own capture camera, and only for that camera: every
+  other camera, and shadow maps, draw it as before. On the defect's scene the
+  reflection now lands within 0.6 px of where it geometrically belongs, with or
+  without a camera Window Y shift, at every door angle tested.
+
+### Changed
+
+- **A nested Flat target on Every Frame reads its reflection one frame late.**
+  The capture still has to list the target's parents to draw them, and the
+  target's material reads the capture, so reading it directly is a cook loop.
+  TouchDesigner resolves it by blanking the reflection on about half the frames
+  once anything moves. The probe reads such a capture through its hold instead:
+  always present, exact for a still camera, one frame behind a moving one. Status
+  says when this applies ("every frame, one frame late (mirror is inside
+  wardrobe)"). If the camera moves and that frame matters, keep the mirror's
+  Geometry COMP at the top level. Top-level targets read the capture directly, as
+  before.
+- **Status names geometry that shows in a reflection when it should not**: a
+  Target with Shade Targets off, or another probe's mirror, nested inside a COMP
+  the Environment includes. Leave that COMP out with `~`, or move the object out
+  of it.
+- The About page reads **1.2.1**.
+
+### Verified
+
+macOS (Apple Silicon), TouchDesigner 2025.33230, on a regression scene with the
+defect's geometry (a pane on a door turned 30–40° inside a wardrobe turned 8°, a
+red sphere where the figure stood), 11 cases. On 1.2.0 the nested pane at 30° and
+40° and a nested sphere in Curved mode changed their own capture (maximum
+difference 0.80–0.96) and the reflection at 30° was missing. On 1.2.1 every
+capture is identical with its target shown or hidden, and the reflection is within
+0.6 px of the analytic position, with a Window Y shift and with a moving camera on
+a top-level mirror. The quick-start, whose mirrors are top level, renders
+bit-exact with the fix on and off (maximum difference 0.0 over the output, the
+planar capture and the cube hold). The exported toxes were loaded back beside
+1.2.0's and compared operator by operator: the only differences are the Version,
+the extension and shader text, and the material's new uniform. Zero errors, zero
+warnings; with its animation frozen, the released quick-start renders identically
+to 1.2.0's (maximum difference 0.0).
+
+### Upgrading
+
+Replace the component with the new `.tox` (or replace your master if you keep
+clones). Clones pick up the fix and the material's new uniform by themselves.
+
 ## MirrorProbe 1.2.0 — 2026-10-28
 
 A feature release for MirrorProbe. GlassPass stays at 1.0.2. Replace
