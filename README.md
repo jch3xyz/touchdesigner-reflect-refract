@@ -53,20 +53,47 @@ component, so you can open one without the component `.tox` beside it.
 If the mirror sits in a room, set **Parallax** to Box and press **Fit Box** — the
 reflection then lines up with the walls instead of sliding as the camera moves.
 
-Quality lives on its own page: cube face size, anti-aliasing, capture format, and
-how often the capture refreshes (every frame, every N frames, or on demand).
+Quality lives on its own page: cube face size, anti-aliasing, capture format,
+clipping, and how often the capture refreshes (every frame, every N frames, or on
+demand).
 
 **Capture Format** defaults to 16-bit Float, so reflections stay HDR: a reflected
 light or flame keeps its values above 1 for bloom and other post effects, matching
 a scene-linear `rgba16float` main render. 8-bit Fixed clips reflections at 1 and
 uses a little over half the memory.
 
-**Background Alpha** (Environment page, default 1) is for anything that reads the
-probe's capture rather than the mirror itself. At 0 the capture is transparent
-wherever nothing was drawn, so a consumer can lay the captured objects over a sky
-of its own (TD Water's `probe` reflection does this). The mirror looks the same
-either way. Keep it at 1 on a probe that feeds a GlassPass, which reads colour
-only and would reflect black where the probe captured nothing.
+**Near and Far** (Quality page) clip the Curved capture, measured from the capture
+point. Far defaults to 20000, enough for hills and mountains in an outdoor scene;
+anything beyond it is missing from the reflection and shows the Background
+instead. Raise it if your scene is bigger. A Flat mirror uses the View Render
+camera's own Near and Far, so it shows what that camera could see along the
+reflected path.
+
+**What an empty direction shows.** Where the reflection holds no geometry, such as
+the sky, **Background** (Environment page) decides:
+
+- **Colour** (default): the **Background Colour**. Match your main render's
+  background.
+- **Environment Map (Cube)** or **(Equirectangular)**: the TOP you set in
+  **Environment Map**, a sky picture or an HDRI, looked up along the reflected ray.
+  It is infinitely far away, so it has no parallax. A cube map can be a Projection
+  TOP or a Cube Map TOP. An equirectangular map is a 2:1 image (u 0 looks along +X,
+  0.25 along +Z, the layout TouchDesigner's Projection TOP uses), for instance a Sky
+  in Equirectangular projection. Turn it with a Projection TOP's Rotate.
+- **Transparent**: the mirror lets the sky your render is composited over show
+  through. Use it when the sky is a picture behind your render rather than
+  something in it, with the render's background alpha at 0. It shows the sky behind
+  the mirror on screen, not the reflected one, so it is an approximation that reads
+  well at a distance.
+
+**Background Alpha** (with Background on Colour, default 1) is for anything that
+reads the probe's capture rather than the mirror itself. At 0 the capture is
+transparent wherever nothing was drawn, so a consumer can lay the captured objects
+over a sky of its own (TD Water's `probe` reflection does this). The mirror looks
+the same either way. The other Background choices always leave the capture
+transparent there. Keep Background on Colour with Background Alpha 1 on a probe
+that feeds a GlassPass: GlassPass reads colour only and would reflect black where
+the probe captured nothing.
 
 **Glass in a mirror is opaque.** In a mirror's capture a GlassPass object wears
 its environment-only material, which shows the environment map through the glass,
@@ -124,7 +151,14 @@ reflects something plausible straight away.
   draws the glass, it loops; use a **Probe** for anything captured live.
 - Box parallax is exact when the surroundings really are a box. For a dome, an
   L-shaped room or an open scene, use Infinite and a well-placed capture point.
-- Both components write opaque alpha.
+- Both components write opaque alpha, except a MirrorProbe whose Background is
+  Transparent.
+- An Environment Map is read directly. It must not be a render that draws the
+  mirror. If the map is animated, the mirror follows it every frame.
+- MirrorProbe's Background menu names the map's layout (Cube or Equirectangular),
+  because a TOP does not say from Python whether it is a cube map. A 2D image
+  given as Cube, or the reverse, leaves the mirror black there; within a second
+  **Status** names the map and the layout to pick.
 
 ## Other machines
 

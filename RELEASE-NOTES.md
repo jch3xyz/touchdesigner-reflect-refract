@@ -1,5 +1,115 @@
 # Release notes
 
+## MirrorProbe 1.2.2 — 2026-11-18
+
+A bug-fix release for MirrorProbe, with one new choice for what an empty
+direction shows. GlassPass stays at 1.0.2. Replace `MirrorProbe.tox` (and the
+quick-start, which carries its own copy).
+
+**The defects.** Found by mirroring a house in an alpine meadow (Curved mode, the
+cube map captured inside the house). Forested hills 1.3 to 2.4 km away and a snow
+ridge at 8 km were missing from the mirror, and those directions came out as the
+flat Background colour, which looked like a shading fault. The same flat colour
+stood in for the sky: an outdoor mirror reflected a uniform blue.
+
+**The causes.** The Curved capture camera kept TouchDesigner's default clipping,
+Near 0.1 and Far 1000, so anything more than 1 km from the capture point was
+clipped away. And where a capture holds nothing, the mirror could only show the
+Background colour.
+
+### Fixed
+
+- **Quality > Near and Far** set the Curved capture's clipping. Far defaults to
+  20000, which covers outdoor scenes; Near stays 0.1. Existing probes take these
+  defaults when they upgrade. A Flat mirror needed no fix: its capture uses the
+  View Render camera's own projection, so it already follows that camera's Near
+  and Far. It shows what the camera could see along the reflected path.
+
+### Added
+
+- **Environment > Background** chooses what the mirror shows where its capture
+  holds no geometry, such as the sky, or anything past Far:
+  - **Colour** (the default): the Background Colour, exactly as before.
+  - **Environment Map (Cube)** / **(Equirectangular)**: the TOP in the new
+    **Environment Map** parameter, looked up along the reflected ray with no
+    parallax, so a sky picture or an HDRI shows in the mirror. A cube map can be a
+    Projection TOP or a Cube Map TOP. An equirectangular map is a 2:1 image such as
+    an HDRI or Sky in Equirectangular projection, in the layout TouchDesigner's
+    Projection TOP uses (u 0 looks along +X, 0.25 along +Z). Turn it with a
+    Projection TOP's Rotate. Roughness blurs it through its mip levels like the
+    capture. The menu names the layout because a TOP does not say from Python
+    whether it is a cube map.
+  - **Transparent**: the mirror writes alpha where its capture is empty, so the
+    sky your render is composited over shows through (alpha is 1 minus the
+    pixel's reflective share there). It is the sky behind the mirror on screen,
+    not the reflected one, so it reads well at a distance and costs nothing. It
+    needs a render with a transparent background over a sky of its own. Reflection
+    Tint does not reach that sky.
+  - With anything but Colour, both captures are transparent where nothing was
+    drawn (Background Alpha 0), which is how the mirror finds those directions.
+    Background Colour and Background Alpha are greyed out then.
+  - An Environment Map choice with no map set shows the Background Colour, and
+    **Status** asks for the map. A map of the other layout (a 2D image named as
+    Cube, or the reverse) renders black. Within a second Status names it and the
+    layout to pick, from the material's own sampler-type warning.
+- Status names the Background when it is not the colour ("background sky
+  (equirectangular)", "background transparent").
+
+### Changed
+
+- The Environment page's **Background** colour is now labelled **Background
+  Colour**. Its name (`Bgcolor`) is unchanged, so expressions and scripts that set
+  it keep working.
+- The component's code now also writes the few network settings a release
+  changes (`cam_capture`'s Near and Far, the captures' background alpha) when it
+  upgrades. Copying `MirrorExt.py` and `mirror.glsl` over an older component
+  upgrades it fully.
+- The About page reads **1.2.2**.
+
+### A GlassPass reading a probe
+
+As with Background Alpha 0: GlassPass reads the probe's colour only, so with any
+Background but Colour the glass reflects black where the probe captured nothing.
+Keep Background on Colour for a probe that feeds a GlassPass, or give the glass
+an Environment Map of its own.
+
+### Verified
+
+macOS (Apple Silicon), TouchDesigner 2025.33230. A new regression scene
+(`docs/regression/mirrorprobe_far_and_sky.py`, 10 cases) has a 5 km ground plane, a
+red 600 m box 3 km behind the camera, a flat mirror pane and a curved ball, and an
+equirectangular sky whose colour is its own direction.
+- On 1.2.1 the box was absent from the ball's cube map (0 red texels, Far 1000).
+  On 1.2.2 it is present: 3,249 texels in the cube map and 67 pixels on the ball.
+  At Far 1000 it is gone again.
+- The flat pane shows the box when the camera's Far is 20000, and not at 1000, in
+  both versions.
+- Every sky pixel of the pane matches its analytic reflected direction to 0.0028
+  with the equirectangular map, and to 0.0028 with the same map converted to a cube
+  by a Projection TOP. The two agree to 0.0005 (99th percentile) on the pane and
+  on the ball.
+- Transparent at Reflectivity 0.5 writes alpha 0.5 and half the base colour on the
+  pane's sky, and alpha 1 where the pane and the ball reflect ground.
+- At the default the quick-start renders bit-exact against 1.2.1, Far 20000
+  included: maximum difference 0.0 over the output, the planar capture and the
+  cube hold, with time frozen. A positive control (Far 1) changed 168,387 output
+  pixels.
+- The 1.2.1 regression test (`mirrorprobe_own_targets.py`) still passes 11/11.
+- The exported toxes were loaded back beside 1.2.1's and compared operator by
+  operator. The only differences are the new parameters, Version, the extension
+  and shader text, the two new samplers, the new uniform, `cam_capture`'s Near and
+  Far, and the captures' alpha expressions. They are the same on the component
+  and on both quick-start probes. Zero errors, zero warnings. With its animation
+  frozen, the released quick-start renders identically to 1.2.1's (maximum
+  difference 0.0).
+
+### Upgrading
+
+Replace the component with the new `.tox` (or replace your master if you keep
+clones). Clones and upgraded probes take Far 20000 and Background Colour by
+themselves. If you raised `cam_capture`'s Far by hand inside a probe, the
+component now owns that setting: set **Far** on the Quality page instead.
+
 ## MirrorProbe 1.2.1 — 2026-11-09
 
 A bug-fix release for MirrorProbe. GlassPass stays at 1.0.2. Replace
