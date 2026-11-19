@@ -1,5 +1,105 @@
 # Release notes
 
+## MirrorProbe 1.3.0 — 2026-11-18
+
+A feature release for MirrorProbe: mirrors that recede inside mirrors, and cube
+faces you turned off that now show the Background. GlassPass stays at 1.0.2.
+Replace `MirrorProbe.tox` (and the quick-start, which carries its own copy).
+Nothing changes in a scene that does not set the new parameters.
+
+**Where it came from.** A ring of twelve flat mirror panels (an infinity room),
+one Curved probe per panel, each captured at the camera's mirror image across its
+panel so that the first reflection is exact. Two things went wrong. The mirrors
+inside the mirrors never receded: each panel's capture stands outside the ring
+and holds the room only through its own panel's window, so another panel's
+capture, looking into it from elsewhere, saw mostly Background. And with only the
+faces the first reflection needs turned on, deeper reflections showed pink, the
+content TouchDesigner happened to leave in faces nobody rendered.
+
+### Added
+
+- **Environment > Room Probe** (Curved only): another MirrorProbe, captured inside
+  the room (Shade Targets off, Parallax Box, all six faces). Every viewer but the
+  Main Camera reads its cube map instead of the probe's own, box-projected from
+  the mirror's surface, the way the Room Probe reads it itself. In practice that
+  means the other probes' captures. The panels inside that cube show the room
+  cube again, so reflections recede, each level one capture refresh older than
+  the one in front of it.
+- **Environment > Main Camera**: the camera the probe's own capture is meant for,
+  the one viewer that still reads it. Empty, with a Room Probe set, every viewer
+  reads the Room Probe. Its **Translate** is taken as where it stands, which keeps
+  the material from re-reading a transform every frame, so keep it at the top
+  level of its network, without a pivot.
+- **Status** names a Room Probe that cannot serve (a Flat probe, a COMP that is
+  not a MirrorProbe, the probe itself, a probe with no Targets) and a Main Camera
+  that does not stand at its Translate. On a working setup it adds "room
+  *probe* for all but *camera*" to the OK line.
+- README: a new section, "Mirrors inside mirrors: the Room Probe", including how
+  to place a panel's capture at the camera's mirror image.
+
+### Fixed
+
+- **A cube face that is off shows the Background.** What TouchDesigner leaves in
+  a face it never rendered is not defined. In testing it held the Background
+  colour, then pure red right after another face was switched on; the infinity
+  room showed pink (1.5, 0.5, 0.5). The material now knows which faces were
+  rendered, and a reflected ray that lands on any other face shows the
+  Background. The same holds for the Room Probe's faces.
+
+### Changed
+
+- The About page reads **1.3.0**.
+- The material has a fifth sampler (`sRoomCube`) and five new uniforms
+  (`uMainEye`, `uRoomProbe`, `uRoomBoxMin`, `uRoomBoxMax`, `uCubeFaces`). The
+  probe writes them itself when it upgrades.
+
+### Verified
+
+macOS (Apple Silicon), TouchDesigner 2025.33230. A new regression scene
+(`docs/regression/mirrorprobe_room_probe.py`, 7 cases) has a closed hexagonal
+ring of 3 m mirror panels between an unlit floor and ceiling. Each panel's probe
+is captured at the camera's mirror image with only its first-bounce faces, and a
+Room Probe sits at the centre. Every camera ray is traced in Python, so each pixel
+is known to show a first reflection (floor or ceiling) or a reflection of another
+panel.
+
+- With the Room Probe, none of the 113,464 second-reflection pixels shows the
+  Background (0.0%) and none is pink. First reflections match the floor and
+  ceiling colours to 0.0023 (99th percentile, 102,929 pixels): the Main Camera
+  still reads its own exact capture.
+- Without it (as in 1.2.2), 74.5% of those pixels show the Background.
+- With the panels' face masks forced to "nothing rendered", every first-reflection
+  pixel falls through to the Background (100%), so the mask is what decides. That
+  first reflections are exact with the real masks shows each face bit is the face
+  the GPU samples.
+- Status names each of the four broken setups it should.
+- The room uniforms re-evaluate only when a setting changes: over about 100
+  frames of the ring cooking, 0 calls to any of the room methods.
+- At the default the quick-start renders bit-exact against 1.2.2: maximum
+  difference 0.0 over the output, the planar capture and the cube hold, with
+  time frozen.
+- `mirrorprobe_far_and_sky.py` still passes 10/10 and `mirrorprobe_own_targets.py`
+  11/11.
+- The infinity room's scene-local patch (the first version of this feature),
+  swapped for the released files on the same probes, upgrades itself to 1.3.0
+  and keeps its Room Probe and Main Camera. The two render identically except
+  for the deepest reflections at the horizon. There the scene changes by up to
+  0.014 from one moment to the next under either version, and the two differ
+  by no more than that.
+- The exported toxes were loaded back beside 1.2.2's and compared operator by
+  operator. The only differences are the two new parameters, Version, the
+  extension and shader text, the new sampler and the five new uniforms. They are
+  the same on the component and on both quick-start probes. Zero errors, zero
+  warnings. With its animation frozen, the released quick-start renders
+  identically to 1.2.2's (maximum difference 0.0).
+
+### Upgrading
+
+Replace the component with the new `.tox` (or replace your master if you keep
+clones), or copy `MirrorExt.py` and `mirror.glsl` over an older component's: it
+upgrades itself, Room Probe and Main Camera empty. A probe that was given Room
+Probe and Main Camera by hand before 1.3.0 keeps their values.
+
 ## MirrorProbe 1.2.2 — 2026-11-18
 
 A bug-fix release for MirrorProbe, with one new choice for what an empty

@@ -103,6 +103,56 @@ contents matter more than the glass, leave the glass out of the probe's
 **Environment** (`* ~geo_glass`): the reflection then shows the flame, without
 the glass.
 
+**Cube faces you turn off** (Quality page) show the Background. Turning off a
+face nothing reflects saves a sixth of a Curved capture's cost each. Before 1.3.0
+a reflected ray that landed on such a face showed whatever TouchDesigner left
+there: the Background colour, red or pink.
+
+## Mirrors inside mirrors: the Room Probe
+
+A Curved mirror is exact for the point it was captured from. For a flat panel you
+can make it exact for your camera. Set the panel's probe to **Capture Point**
+Origin and **Parallax** Infinite, and set **Capture Offset** so the capture stands
+at the camera's mirror image across the panel. For a panel whose plane passes
+through point *c* with normal *n*, a camera at *e* has its mirror image at
+*e* − 2((*e* − *c*)·*n*)*n*; the offset is that point minus the panel's origin.
+Only the faces that view needs have to be on.
+
+A ring of such panels (an infinity room) shows each panel's first reflection
+exactly, but the mirrors inside the mirrors do not recede. Each capture stands
+outside the room and holds it only through its own panel's window. Another panel's
+capture looks into this one from somewhere else, misses that window, and sees
+mostly Background.
+
+**Room Probe** fixes that (Environment page, Curved only):
+
+1. Add one more MirrorProbe for the room: **Targets** an empty Geometry COMP at
+   the room's centre, **Shade Targets** off, **Parallax** Box with **Box Min** and
+   **Box Max** on the walls, all six faces on.
+2. On every panel's probe, set **Room Probe** to it and **Main Camera** to the
+   camera the panels' captures are placed for.
+
+The Main Camera still sees each panel's own exact capture. Every other viewer sees
+the Room Probe's cube map, box-projected from the panel's surface: the other
+panels' captures, above all. Inside that cube the panels show the room cube again,
+so the reflections recede. Each level is one capture refresh older than the one in
+front of it. On Every Frame the depth fills in within a few frames, and moving
+things lag a frame per level.
+
+- With **Room Probe** empty nothing changes: every viewer reads the probe's own
+  cube map, as before 1.3.0.
+- With a Room Probe and no Main Camera, every viewer reads the Room Probe, the
+  main camera included: one shared, box-projected environment for all the panels.
+- The Main Camera's **Translate** is taken as where it stands, which keeps the
+  material from re-reading a transform every frame. Keep that camera at the top
+  level of its network, without a pivot. **Status** says when it does not stand
+  at its Translate.
+- **Status** also names a Room Probe that cannot serve: a Flat probe, a COMP that
+  is not a MirrorProbe, the probe itself, or a probe with no Targets. Until it is
+  fixed, every viewer reads the probe's own cube map.
+- Box projection is exact only for a box-shaped room. In a polygonal ring, set the
+  box to the walls, and the deeper reflections are approximate.
+
 ## GlassPass in three steps
 
 1. Drop it in, set **Host Render** to the Render TOP that draws your scene, and
@@ -132,7 +182,8 @@ reflects something plausible straight away.
   Anything off-screen, or behind other glass, does not show through.
 - A flat (planar) mirror is correct for one camera only, and is deliberately left
   out of other mirrors' captures. A mirror that must appear inside another mirror
-  needs Curved mode.
+  needs Curved mode. For mirrors facing mirrors (a ring of panels), see
+  "Mirrors inside mirrors: the Room Probe".
 - A Flat mirror whose Geometry COMP sits inside another one that the Environment
   includes (a pane on a door inside a wardrobe) reads its reflection one frame
   late on Every Frame, and **Status** says so. That is exact for a still camera;
